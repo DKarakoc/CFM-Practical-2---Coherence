@@ -128,5 +128,13 @@ for epoch in range(nEpochs):
 
 #plt.plot(H)
 print(D)
-print(V)
+#print(V)
 print(E) ; print(E.shape)
+
+# trim the extra node for the observations D for exhaustive Search
+if len(D)>0:
+        E = np.delete(E, nV , 0)
+        E = np.delete(E, nV, 1)
+
+print(E)
+print(E.shape)

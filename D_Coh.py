@@ -111,8 +111,6 @@ for x in range(nV):
     if p_obs[x] > y:
         D.append(x)
 
-### for simplicity, No observations ###
-D = []
 
 # connection probability between any two nodes
 conn_prob = 1
@@ -131,9 +129,9 @@ for epoch in range(nEpochs):
     V *= d
     # the special node is also updated and decayed so set it back to 1
     if D:
-        # V[0,-1] = 1  #fix this
-        for index in D:
-            V[0, index] = 1
+        V[0,-1] = 1  #fix this only for F_Coh (next two lines)
+        #for index in D:
+         #   V[0, index] = 1
     # clip the matrix to the max and min values
     V = np.clip(V, Amin, Amax)
     H.append(Harmony(E, V))
@@ -152,7 +150,14 @@ def create_instance(nV):
 # weight for the observation in discriminating coherence
 w_d = 1
 
-################# Discriminating Coherence ##########################
+# trim the extra node for the observations D for exhaustive Search
+if len(D)>0:
+        E_trimmed = np.delete(E, nV , 0)
+        E_trimmed = np.delete(E_trimmed, nV, 1)
+else:
+    E_trimmed = E
+
+################# Discriminating Coherence Exhaustive Search ##########################
 max_d_coh=0
 # create a generator which yields all possible instances
 for inst in create_instance(nV):
@@ -161,11 +166,11 @@ for inst in create_instance(nV):
     for x in range(nV):
         for y in range(x+1,nV):
         # check if the contraint is positive and if it is satisfied
-            if E[x,y] > 0 and ((x in inst and y in inst )or (not x in inst and not y in inst)) :
-                coh += E[x,y]
+            if E_trimmed[x,y] > 0 and ((x in inst and y in inst )or (not x in inst and not y in inst)) :
+                coh += E_trimmed[x,y]
             # check if the contraint is negative and if it is satisfied
-            elif E[x,y] < 0 and ((x in inst and not y in inst) or (not x in inst and y in inst)):
-                coh += abs(E[x,y])
+            elif E_trimmed[x,y] < 0 and ((x in inst and not y in inst) or (not x in inst and y in inst)):
+                coh += abs(E_trimmed[x,y])
     # next check for each node in D if it is accepted and if so add the weight w_d to the coherence value
     for x in D:
         if x in inst:
@@ -183,9 +188,7 @@ print(best_d_inst)
 approximation = []
 exhaustive = []
 
-for each in V[0,:]:
-    print ("test")
-
+# Convert the network's activation outputs into booleans
 for index in range(nV):
     if V[0, index] > 0:
         approximation.append(True)
@@ -194,6 +197,8 @@ for index in range(nV):
 
 print(approximation)
 
+
+# Convert the exhaustive search's output into booleans
 for each in range(nV):
     exhaustive.append(False)
 
@@ -202,12 +207,10 @@ for index in best_d_inst:
 
 print(exhaustive)
 
+# Compare the two outputs
 mismatches = 0
-
 for index in range(nV):
     if exhaustive[index] != approximation[index]:
         mismatches += 1
 
 print("Mismatches: " + str(mismatches))
-
-print(E)
