@@ -129,3 +129,4 @@ for epoch in range(nEpochs):
 #plt.plot(H)
 print(D)
 print(V)
+print(E) ; print(E.shape)

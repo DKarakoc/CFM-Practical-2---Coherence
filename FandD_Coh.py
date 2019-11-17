@@ -128,4 +128,5 @@ for inst in create_instance(nV):
         max_d_coh = coh
         best_d_inst = inst
 print('D = ', D, '\n', 'F_coh:' , max_f_coh , ' ' , best_f_inst, '\n', 'D_coh:', max_d_coh, ' ', best_d_inst)
-
+print(G)
+print(G.shape)

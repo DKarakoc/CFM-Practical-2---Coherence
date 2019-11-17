@@ -1,44 +1,56 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-This is example code for an implementation of an exhaustive
-search for the Foundational and discriminating coherence problem.
-You are free to use this if you get stuck somewhere in the assignment,
-however you will still need to upload your own code with the assignment.
-This script is not guaranteed to be a perfect implementation.
-Any mistakes you copy will be judged as your own mistakes for the grading.
+Created on Tue Nov 28 11:56:36 2017
 
-Adapted and modified by Denis Karakoc on Nov 16th 2019
+@author: danny merkx
+
+adapted and altered by Denis Karakoc on November 17th 2019
 """
+
 import itertools
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-def create_instance(nV):
-    # this function creates a generator that generates all instances (possible truth
-    # assignments) to our graph. Basically we generate all possible subsets of nodes, and
-    # treat the nodes that are in this subset as being assigned 'True' and all the other nodes as
-    # being false.
-    for v in range(0, nV + 1):
-        for ex in itertools.combinations(range(nV), v):
-            yield ex
-
-
-def make_graph(nV, conn_prob, neg_prob):
+def make_graph(nV, conn_prob, neg_prob, D):
     # function to make a random graph of given size, takes a connection probability
-    # and a probability that a connection is a negative constraint
-    G = np.matrix(np.zeros([nV, nV]))
+    # and a probability that a connection is a negative constraint and the observation
+    # set
+    # if the special set of observations is not empty we need to add an extra,
+    # always activated, node which connects to all elements in D
+    if D:
+        s = 1
+    else:
+        s = 0
+    # the matrix that will contain all the edges
+    E = np.matrix(np.zeros([nV + s, nV + s]))
+    # the matrix that will contain all the activation levels
+    V = np.matrix(np.zeros([nV + s]))
+    V += 0.1
+    # if there are special elements in D, we need a special node whose activation
+    # will be fixed to 1.
+    if D:
+        V[0, -1] = 1
     # only accept connected graphs
-    while not BFS(G, nV):
-        G = np.matrix(np.zeros([nV, nV]))
+    while not BFS(E, nV + s):
+        # create all the 'normal' positive and negative constraints
+        E = np.matrix(np.zeros([nV + s, nV + s]))
         for x in range(0, nV):
             for y in range(x + 1, nV):
                 if np.random.rand() <= conn_prob:
                     if np.random.rand() >= neg_prob:
-                        G[x, y] = np.random.rand()
+                        E[x, y] = 0.4
                     else:
-                        G[x, y] = np.random.rand() - 1
-        G += np.transpose(G)
-    return G
+                        E[x, y] = -0.6
+        # If there are special elements in D, connect them to the 'always on'
+        # node.
+        if D:
+            for x in D:
+                E[x, nV] = 0.5
+        E += np.transpose(E)
+
+    return E, V
 
 
 def BFS(G, nV):
@@ -70,42 +82,90 @@ def BFS(G, nV):
         return False
 
 
+def Harmony(E, V):
+    H = 0
+    for x in range(np.size(V)):
+        for y in range(np.size(V)):
+            H += E[x, y] * V[0, x] * V[0, y]
+    return H
+
+
 # number of vertices
 nV = 10
-# observations (in Foundational coherence these MUST be true, in Discriminating
-# coherence these have a weight i.e. the instance gets a bonus if these are true)
-# randomly assign a small amount of vertices as observations
+# number of epochs
+nEpochs = 200
+# decay
+d = .95
+# max and min values of the activation
+Amax = 1
+Amin = -1
+# randomly assign some of the vertices as observations. These MUST be true in foundational
+# coherence. In the N-Coh algorithms we couple the observations with a node whose
+# activation is fixed to 1 such that the observation receives some baseline of activation
+# at each iteration.
 p_obs = np.random.rand(nV)
 D = []
-# weight for the observation in discriminating coherence
-w_d = 1
 for x in range(nV):
     # control the observation probability through y
-    y = 0.8
+    y = 0.9
     if p_obs[x] > y:
         D.append(x)
-D = set(D)
-# connection probability (applied to all possible connection of the fully connected graph)
-conn_prob = 0.5
+
+### for simplicity, No observations ###
+D = []
+
+# connection probability between any two nodes
+conn_prob = 1
 # probability of any connection being a negative constraint
-neg_prob = 0.5
-# matrix to hold the graph structure
-G = make_graph(nV, conn_prob, neg_prob)
+neg_prob = 0.4
+# matrices for the edges and vertices
+E, V = make_graph(nV, conn_prob, neg_prob, D)
+
+# keep track of the harmony
+H = []
+# create a generator which yields all possible instances
+for epoch in range(nEpochs):
+    # apply the activation update
+    V = V * E
+    # apply decay
+    V *= d
+    # the special node is also updated and decayed so set it back to 1
+    if D:
+        # V[0,-1] = 1  #fix this
+        for index in D:
+            V[0, index] = 1
+    # clip the matrix to the max and min values
+    V = np.clip(V, Amin, Amax)
+    H.append(Harmony(E, V))
+
+# plt.plot(H)
+
+def create_instance(nV):
+    # this function creates a generator that generates all instances (possible truth
+    # assignments) to our graph. Basically we generate all possible subsets of nodes, and
+    # treat the nodes that are in this subset as being assigned 'True' and all the other nodes as
+    # being false.
+    for v in range(0,nV+1):
+        for ex in itertools.combinations(range(nV), v):
+            yield ex
+
+# weight for the observation in discriminating coherence
+w_d = 1
 
 ################# Discriminating Coherence ##########################
-max_d_coh = 0
+max_d_coh=0
 # create a generator which yields all possible instances
 for inst in create_instance(nV):
     coh = 0
     # calculate the coherence
     for x in range(nV):
-        for y in range(x + 1, nV):
-            # check if the contraint is positive and if it is satisfied
-            if G[x, y] > 0 and ((x in inst and y in inst) or (not x in inst and not y in inst)):
-                coh += G[x, y]
+        for y in range(x+1,nV):
+        # check if the contraint is positive and if it is satisfied
+            if E[x,y] > 0 and ((x in inst and y in inst )or (not x in inst and not y in inst)) :
+                coh += E[x,y]
             # check if the contraint is negative and if it is satisfied
-            elif G[x, y] < 0 and ((x in inst and not y in inst) or (not x in inst and y in inst)):
-                coh += abs(G[x, y])
+            elif E[x,y] < 0 and ((x in inst and not y in inst) or (not x in inst and y in inst)):
+                coh += abs(E[x,y])
     # next check for each node in D if it is accepted and if so add the weight w_d to the coherence value
     for x in D:
         if x in inst:
@@ -114,5 +174,40 @@ for inst in create_instance(nV):
     if coh > max_d_coh:
         max_d_coh = coh
         best_d_inst = inst
+
 print('Observations = ', D, '\n', 'D_coh:', max_d_coh, ' ', best_d_inst)
 
+print(V)
+print(best_d_inst)
+
+approximation = []
+exhaustive = []
+
+for each in V[0,:]:
+    print ("test")
+
+for index in range(nV):
+    if V[0, index] > 0:
+        approximation.append(True)
+    else:
+        approximation.append(False)
+
+print(approximation)
+
+for each in range(nV):
+    exhaustive.append(False)
+
+for index in best_d_inst:
+    exhaustive[index] = True
+
+print(exhaustive)
+
+mismatches = 0
+
+for index in range(nV):
+    if exhaustive[index] != approximation[index]:
+        mismatches += 1
+
+print("Mismatches: " + str(mismatches))
+
+print(E)
