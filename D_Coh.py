@@ -180,10 +180,10 @@ for inst in create_instance(nV):
         max_d_coh = coh
         best_d_inst = inst
 
-print('Observations = ', D, '\n', 'D_coh:', max_d_coh, ' ', best_d_inst)
+#print('Observations = ', D, '\n', 'D_coh:', max_d_coh, ' ', best_d_inst)
 
-print(V)
-print(best_d_inst)
+#print(V)
+#print(best_d_inst)
 
 approximation = []
 exhaustive = []
@@ -195,7 +195,7 @@ for index in range(nV):
     else:
         approximation.append(False)
 
-print(approximation)
+#print(approximation)
 
 
 # Convert the exhaustive search's output into booleans
@@ -205,7 +205,7 @@ for each in range(nV):
 for index in best_d_inst:
     exhaustive[index] = True
 
-print(exhaustive)
+#print(exhaustive)
 
 # Compare the two outputs
 mismatches = 0
@@ -213,4 +213,5 @@ for index in range(nV):
     if exhaustive[index] != approximation[index]:
         mismatches += 1
 
-print("Mismatches: " + str(mismatches))
+#print("Mismatches: " + str(mismatches))
+print(mismatches)
