@@ -91,7 +91,7 @@ def Harmony(E, V):
 
 
 # number of vertices
-nV = 10
+nV = 5
 # number of epochs
 nEpochs = 200
 # decay
@@ -111,13 +111,24 @@ for x in range(nV):
     if p_obs[x] > y:
         D.append(x)
 
-
+D = []
 # connection probability between any two nodes
 conn_prob = 1
 # probability of any connection being a negative constraint
 neg_prob = 0.4
 # matrices for the edges and vertices
 E, V = make_graph(nV, conn_prob, neg_prob, D)
+
+#print(V)
+
+E = np.array([[0,-0.6,0.4,-0.6,0.4],
+             [-0.6,0,-0.6,0.4,-0.6],
+             [0.4,-0.6,0,-0.6,0.4],
+             [-0.6, 0.4,-0.6,0,-0.6],
+             [0.4,-0.6,0.4,-0.6,0]])
+
+
+print(E)
 
 # keep track of the harmony
 H = []
@@ -195,7 +206,7 @@ for index in range(nV):
     else:
         approximation.append(False)
 
-#print(approximation)
+print(approximation)
 
 
 # Convert the exhaustive search's output into booleans
@@ -205,7 +216,7 @@ for each in range(nV):
 for index in best_d_inst:
     exhaustive[index] = True
 
-#print(exhaustive)
+print(exhaustive)
 
 # Compare the two outputs
 mismatches = 0

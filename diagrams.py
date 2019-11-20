@@ -1,7 +1,7 @@
 #! /usr/bin/env python3
-import numpy as np
-from matplotlib import pyplot as plt
 
+from matplotlib import pyplot as plt
+import numpy as np
 
 def readFile(filepath):
     f = open(filepath)
@@ -26,10 +26,12 @@ data_trimmed = [int(i) for i in data_trimmed]
 
 print(data_trimmed)
 
-plt.hist(data_trimmed, bins = 'auto')
+bins = np.arange(9)-0.5
+
+plt.hist(data_trimmed, bins)
+plt.title("nv = 7")
+plt.xticks(range(8))
 plt.xlabel("Number of Mismatches")
 plt.ylabel("Occurrences")
 plt.show()
 
-#np.histogram(data_trimmed, bins = 10)
-#plt.show()
